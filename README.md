@@ -18,6 +18,12 @@ You can also pass a JSON file:
 
     handlebars file.json < template.hbs > output.txt
 
+You can also do these:
+	
+	handlebars file.json template.hbs
+ 
+	cat file.json | handlebars template.hbs
+
 # install
 
     npm install -g handlebars-cmd
