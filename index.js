@@ -34,6 +34,9 @@ readStream(process.stdin, function(err, tmpl) {
             var f = fs.readFileSync(file);
             return handle(f, context); 
         });
+        // FIXME: let user include helpers with cli
+        // do not include by default
+        require('./helpers.js'); // self registering, also usable with node -r ./helpers other-cli.js
         var template = hbs.compile(tmpl.toString());
         var result = template(args);
         return result;
