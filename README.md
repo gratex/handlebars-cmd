@@ -24,6 +24,8 @@ You can also do these:
  
 	cat file.json | handlebars template.hbs
 
+	cat file.json | handlebars '{{name}}'
+
 # install
 
     npm install -g handlebars-cmd
