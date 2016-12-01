@@ -26,6 +26,8 @@ You can also do these:
 
 	cat file.json | handlebars '{{name}}'
 
+	echo "{{sampleDate}}" | node ./index.js '{"sampleDate":"2016-12-01T08:00:54.194Z"}'
+
 # install
 
     npm install -g handlebars-cmd
