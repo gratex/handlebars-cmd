@@ -40,7 +40,7 @@ You can also pass context (optional)
     
     {{{include 'render.md.hbs' item}}}
 
-# generic helpers
+# generic ES6 helpers
 
 	it also comes with str, math and date helpers 
 	built in (dirty and generic for now but usable for CLI purposes)
@@ -51,6 +51,19 @@ You can also pass context (optional)
 	echo "Hello {{str-substr name 1 2}}" | node index.js --name Test
 
 	echo "Hello {{math-min 10 2 12}}" | node index.js --name Test
+
+# dojo helpers
+
+	echo '{"sampleDate":"2016-12-01T08:00:54.194Z"}' | node ./index.js "{{dlocale-format sampleDate}}"
+
+	echo '{"sampleDate":"2016-12-01T08:00:54.194Z", "_fmt":{"formatLength":"long"}}' | node ./index.js "{{dlocale-format sampleDate _fmt}}"
+
+	echo '{"sampleDate":"2016-12-03T08:00:54.194Z"}' | node ./index.js "{{dlocale-isWeekend sampleDate}}"
+
+	echo '{"sampleDate":"2016-12-03T08:00:54.194Z"}' | node ./index.js "{{dlocale-isWeekend sampleDate}}"
+
+	TODO: dlocale-getNames sample
+
 
 # license
 
