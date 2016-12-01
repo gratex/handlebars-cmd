@@ -35,7 +35,7 @@ Object.getOwnPropertyNames(Date.prototype)
                 _this = JSON.parse('"' + _this + '"', jsonDateParser);
             }
             //console.log(typeof _this, _this)
-                // TODO: else
+            // TODO: else
             var r = Date.prototype[pn].apply(_this, args);
             return new hbs.SafeString(r);
         });
@@ -56,4 +56,41 @@ function jsonDateParser(key, value) {
         }
     }
     return value;
+}
+
+var drequire;
+try { drequire = require("drequire")(); } catch (ex) {}
+// only if dojo is available
+if (drequire) {
+
+    var dlocale = drequire("dojo/date/locale")
+    hbs.registerHelper("dlocale-format", function(date, format) {
+        var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+        var _this = args[0];
+        if (typeof _this === "string") {
+            args[0] = _this = JSON.parse('"' + _this + '"', jsonDateParser);
+        }
+        console.log(args);
+        // TODO: else
+        var r = dlocale.format.apply(null, args);
+        return new hbs.SafeString(r);
+    });
+    hbs.registerHelper("dlocale-isWeekend", function(date) {
+        var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+        var _this = args[0];
+        if (typeof _this === "string") {
+            args[0] = _this = JSON.parse('"' + _this + '"', jsonDateParser);
+        }
+        console.log(args);
+        // TODO: else
+        var r = dlocale.isWeekend.apply(null, args);
+        return new hbs.SafeString(r);
+    });
+    hbs.registerHelper("dlocale-getNames", function() {
+        // TODO: this return arrays, so can/shell this be used from HB ?
+        var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+        console.log(args);
+        var r = dlocale.getNames.apply(null, args);
+        return new hbs.SafeString(r); //TODO: string ? study what can be returned from HB helpers
+    });
 }
