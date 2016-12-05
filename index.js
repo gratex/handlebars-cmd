@@ -50,7 +50,7 @@ function processWithMultiArgs(args, callback) {
         });
         return callback(args[0], args[1]);
     } else if (args._.length === 1) {
-        var arg1 = (args._[0].match(/(^{(?!{).*}|{{.*?}})/gm).length) ? arg1 = args._[0] : fs.readFileSync(args._[0]).toString();
+        var arg1 = (/(^{(?!{).*}|{{.*?}})/gm.test(args._[0])) ? args._[0] : fs.readFileSync(args._[0]).toString();
         if (Object.keys(args).length > 2) {
             return callback(arg1, args);
         }
