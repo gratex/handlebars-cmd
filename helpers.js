@@ -60,6 +60,7 @@ function jsonDateParser(key, value) {
 
 var drequire;
 try { drequire = require("drequire")(); } catch (ex) {
+    console.error("[Warning]: dojo helpers will not be available.");
     console.error(ex);
 }
 // only if dojo is available
