@@ -59,7 +59,9 @@ function jsonDateParser(key, value) {
 }
 
 var drequire;
-try { drequire = require("drequire")(); } catch (ex) {}
+try { drequire = require("drequire")(); } catch (ex) {
+    console.error(ex);
+}
 // only if dojo is available
 if (drequire) {
 
@@ -70,7 +72,7 @@ if (drequire) {
         if (typeof _this === "string") {
             args[0] = _this = JSON.parse('"' + _this + '"', jsonDateParser);
         }
-        console.log(args);
+        //console.log(args);
         // TODO: else
         var r = dlocale.format.apply(null, args);
         return new hbs.SafeString(r);
@@ -81,7 +83,7 @@ if (drequire) {
         if (typeof _this === "string") {
             args[0] = _this = JSON.parse('"' + _this + '"', jsonDateParser);
         }
-        console.log(args);
+        //console.log(args);
         // TODO: else
         var r = dlocale.isWeekend.apply(null, args);
         return new hbs.SafeString(r);
@@ -89,7 +91,7 @@ if (drequire) {
     hbs.registerHelper("dlocale-getNames", function() {
         // TODO: this return arrays, so can/shell this be used from HB ?
         var args = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
-        console.log(args);
+        //console.log(args);
         var r = dlocale.getNames.apply(null, args);
         return new hbs.SafeString(r); //TODO: string ? study what can be returned from HB helpers
     });
