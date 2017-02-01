@@ -17,7 +17,7 @@ detectInputs(process.stdin, cliArgs, function transform(err, { data, template })
     // do not include by default
     require('./helpers.js'); // self registering, also usable with node -r ./helpers other-cli.js
 
-
+    //console.log("data", data);
 
     var transformed = template(data);
     // avoid printing useless whitespace
@@ -54,11 +54,13 @@ function detectInputs(stdin, cliArgs, callback) {
         readStream(stdin, function(err, string) { //no json nor template streaming api, so read fully
             // something shell be on stdin, data or remplate
             tryData(string) && tryTemplate(argsFiles[0]) || tryTemplate(string) && tryData(argsFiles[0]);
+            // poison data from cli args
             inputs.data = Object.assign(inputs.data || {}, argsData); //mix CLI args
             callback(check(inputs), inputs);
         });
     } else { //nothing on pipe all must be args
         tryData(argsFiles[1]) && tryTemplate(argsFiles[0]) || tryTemplate(argsFiles[1]) && tryData(argsFiles[0]);
+        // poison data from cli args
         inputs.data = Object.assign(inputs.data || {}, argsData); // mix CLI args
         callback(check(inputs), inputs);
     }
@@ -93,12 +95,13 @@ function detectInputs(stdin, cliArgs, callback) {
         if (inputs.template) return;
         var r;
         try {
-            r = hbs.compile(stringOrPath);
-        } catch (ex) { reportError(ex); }
-        if (!r) {
             try {
                 r = hbs.compile(fs.readFileSync(stringOrPath).toString()); // REVIEW:
             } catch (ex) { reportError(ex); }
+
+        } catch (ex) { reportError(ex); }
+        if (!r) {
+            r = hbs.compile(stringOrPath);
         }
         return inputs.template = r;
     }
