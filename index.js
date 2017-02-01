@@ -62,7 +62,7 @@ function processWithMultiArgs(args, callback) {
 
 function displayResult(arg1, arg2) {
     process.stdout.write(autoHandle(arg1, arg2));
-    process.exit(0);
+    
 }
 
 /**
