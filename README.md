@@ -4,7 +4,7 @@ Invoke handlebars from the commandline.
 
 Example:
 
-    echo "Hello {{name}}" | handlebars --name Test
+    echo "Hello {{name}}" | node ./index.js --name Test
 
 Output:
 
@@ -16,15 +16,15 @@ interpreted as an object.
 
 You can also pass a JSON file:
 
-    handlebars file.json < template.hbs > output.txt
+    node ./index.js file.json < template.hbs > output.txt
 
 You can also do these:
 	
-	handlebars file.json template.hbs
+	node ./index.js file.json template.hbs
  
-	cat file.json | handlebars template.hbs
+	cat file.json | node ./index.js template.hbs
 
-	cat file.json | handlebars '{{name}}'
+	cat file.json | node ./index.js '{{name}}'
 
 	echo "{{sampleDate}}" | node ./index.js '{"sampleDate":"2016-12-01T08:00:54.194Z"}'
 

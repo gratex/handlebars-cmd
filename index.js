@@ -1,104 +1,113 @@
 #!/usr/bin/env node
 
-var fs = require('fs'),
-    args = require('optimist').argv,
-    hbs = require('handlebars');
 
-if (args._.length) {
-    processWithMultiArgs(args, displayResult);
-} else
-    for (var key in args) {
-        try {
-            args[key] = JSON.parse(args[key]);
-        } catch (e) {}
-    }
+var cliArgs = require("optimist").argv;
+var hbs = require("handlebars");
 
-function readStream(s, done) {
-    var bufs = [];
-    s.on('data', function(d) {
-        bufs.push(d);
-    });
-    s.on('end', function() {
-        done(null, Buffer.concat(bufs));
-    });
-    s.resume();
-}
-
-readStream(process.stdin, function(err, tmpl) {
-    process.stdout.write(handle(tmpl, args));
-});
-
-function handle(tmpl, args) {
-    hbs.registerHelper('include', function(file, context, opt) {
-        var context = null == context ? args : context;
-        var f = fs.readFileSync(file);
-        return handle(f, context);
-    });
+detectInputs(process.stdin, cliArgs, function transform(err, { data, template }) {
+    if (err) {
+        throw err;
+    };
+    // hbs.registerHelper('include', function(file, context, opt) {
+    //     var context = null == context ? args : context;
+    //     var f = fs.readFileSync(file);
+    //     return handle(f, context);
+    // });
     // FIXME: let user include helpers with cli
     // do not include by default
     require('./helpers.js'); // self registering, also usable with node -r ./helpers other-cli.js
 
-    var template = hbs.compile(tmpl.toString());
-    var result = template(args);
-    return result;
-}
 
-function processWithMultiArgs(args, callback) {
-    if (args._.length === 2) {
-        args = args._.map(function(file) {
-            return fs.readFileSync(file).toString();
+
+    var transformed = template(data);
+    // avoid printing useless whitespace
+    // FIXME: node ./index.js '{"name":"slon"}' '{{name}}' is OK, 
+    // but echo -e '{{name}}' |  node ./index.js '{"name":"slon"}' | wc -l is extra new line, why ?
+    transformed && process.stdout.write(transformed + require('os').EOL);
+});
+
+
+// supported CLI usage:
+// cat test/data.json | handlebars-cmd test/templ.hbs
+// cat test/templ.hbs | handlebars-cmd test/data.templ
+// cat test/templ.hbs | hanedlebars-cmd --prop1=test1 --prop2=test2
+// hanedlebars-cmd test/templ.hbs --prop1=test1 --prop2=test2
+
+// hanedlebars-cmd test/templ.hbs '{"data1":"test 1"}'
+// hanedlebars-cmd '{"data1":"test 1"}' test/templ.hbs 
+// hanedlebars-cmd "{{template}}"" test/data.json 
+
+
+function detectInputs(stdin, cliArgs, callback) {
+
+    var inputs = {}; // this will be built from anywhere and passed to callback
+
+    var fs = require("fs");
+
+    var argsFiles = cliArgs._; //  CLI specified files
+    //  CLI specified data (eg --name=Test)
+    var argsData = JSON.parse(JSON.stringify(cliArgs, (k, v) => k == "_" || k == "$0" ? undefined : v));
+
+
+
+    if (!stdin.isTTY) { //something on pipe
+        readStream(stdin, function(err, string) { //no json nor template streaming api, so read fully
+            // something shell be on stdin, data or remplate
+            tryData(string) && tryTemplate(argsFiles[0]) || tryTemplate(string) && tryData(argsFiles[0]);
+            inputs.data = Object.assign(inputs.data || {}, argsData); //mix CLI args
+            callback(check(inputs), inputs);
         });
-        return callback(args[0], args[1]);
-    } else if (args._.length === 1) {
-        var arg1 = (/(^{(?!{).*}|{{.*?}})/gm.test(args._[0])) ? args._[0] : fs.readFileSync(args._[0]).toString();
-        if (Object.keys(args).length > 2) {
-            return callback(arg1, args);
-        }
-        readStream(process.stdin, function(error, tmpl) {
-            return callback(tmpl + "", arg1)
+    } else { //nothing on pipe all must be args
+        tryData(argsFiles[1]) && tryTemplate(argsFiles[0]) || tryTemplate(argsFiles[1]) && tryData(argsFiles[0]);
+        inputs.data = Object.assign(inputs.data || {}, argsData); // mix CLI args
+        callback(check(inputs), inputs);
+    }
+    //-----------------------------------------------------
+
+    function readStream(s, done) {
+        var bufs = [];
+        s.on('data', function(d) {
+            bufs.push(d);
         });
-    }
-}
-
-function displayResult(arg1, arg2) {
-    process.stdout.write(autoHandle(arg1, arg2));
-    
-}
-
-/**
- * Wrapper method of handle which can auto swap args correspondingly 
- * @param  {string/object} arg1 [Template or json]
- * @param  {string/object} arg2 [Template or json]
- * @return {string}      
- */
-function autoHandle(arg1, arg2) {
-    arg1 = objectifyJson(arg1);
-    arg2 = objectifyJson(arg2);
-    if (typeof arg2 === 'object') {
-        return handle(arg1, arg2);
+        s.on('end', function() {
+            done(null, Buffer.concat(bufs).toString());
+        });
+        s.resume();
     }
 
-    if (typeof arg1 === 'object') {
-        return handle(arg2, arg1);
-    }
-
-    console.log("MISSING JSON");
-    process.exit(1);
-}
-
-/**
- * Convert input to json object
- * If failed, return the origin string
- * @param  {string/ object} value [input value]
- * @return {string/ object}
- */
-function objectifyJson(value) {
-    if (typeof value === 'string') {
+    function tryData(stringOrPath) {
+        if (inputs.data) return;
+        var r;
         try {
-            value = JSON.parse(value);
-        } catch (e) {
-            return value;
+            r = JSON.parse(stringOrPath);
+        } catch (ex) { reportError(ex); }
+        if (!r) {
+            try {
+                r = fs.readFileSync(stringOrPath).toString();
+            } catch (ex) { reportError(ex); }
         }
+        return inputs.data = r;
     }
-    return value;
+
+    function tryTemplate(stringOrPath) {
+        if (inputs.template) return;
+        var r;
+        try {
+            r = hbs.compile(stringOrPath);
+        } catch (ex) { reportError(ex); }
+        if (!r) {
+            try {
+                r = hbs.compile(fs.readFileSync(stringOrPath).toString()); // REVIEW:
+            } catch (ex) { reportError(ex); }
+        }
+        return inputs.template = r;
+    }
+
+    function reportError() {
+        //console.error(error);
+    }
+
+    function check({ data, template }) {
+        return data && template ? null : new Error("Missing Data or Template");
+    }
 }
